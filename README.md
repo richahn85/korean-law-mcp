@@ -49,6 +49,14 @@ graph LR
 
 → STEP 1 상황진단(주택임대차보호법 자동 식별) → STEP 2 권리/구제수단(판례) → STEP 3 신청기관/기한(행정규칙+해석) → STEP 4 필요서류/양식(별표) → STEP 5 함정/주의(시효·법률구조공단). 평소 말투 그대로 → 실행 가능한 단계로 변환.
 
+### + v4.0.7 — 국세청 판례 본문 fallback
+
+법제처 JSON API에 본문이 비어 오는 판례를 국세청 `taxlaw.nts.go.kr`에서 HTML로 자동 보강. JSON 실패·파싱 실패·본문 누락 세 경우 모두 fallback으로 진입하며 안전하게 회수됨. 사내망/SSL inspection 환경용 `LAW_EXTERNAL_HTTPS_PROXY`(선택)·`LAW_EXTERNAL_TLS_REJECT_UNAUTHORIZED`(진단용) 지원 — 자세한 설정은 아래 "국세청 판례 서버 TLS/프록시 설정" 섹션 참조. (외부 PR #44)
+
+### + v4.0.6 — 법제처 API 프로토콜 설정 + 판례 재검색 개선
+
+폐쇄망/인증서 문제 환경을 위해 `LAW_API_PROTOCOL=http` 옵션 추가(기본 https). 판례 재검색 키워드 후보 생성 개선으로 매칭률 향상. (외부 PR #41/#42)
+
 ### + v4.0.5 — 의존성 취약점 일괄 패치 (Security)
 
 `npm audit` High 4건(@xmldom/xmldom 5건의 XML injection + DoS, @hono/node-server 경로 우회, express-rate-limit IPv6 우회, fast-uri path traversal) 일괄 패치. 모두 semver-major 변경 없는 patch/minor 업데이트. `npm audit` → **0 vulnerabilities**. 코드 변경 0건. 자세한 GHSA 목록은 [CHANGELOG](CHANGELOG.md#405---2026-05-23) 참조.
