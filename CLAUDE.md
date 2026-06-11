@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Korean Law MCP Server v4.2.0 - 법제처 42개 API → 17개 통합 도구 (내부 93개) + 9개 시나리오 + 자연어 CLI + HTTP stateless + 판례 토큰 74% 감축 + **verify_citations (LLM 환각 방지)** + **impact_map (조문 영향 그래프)** + **time_travel (시점 diff)** + **action_plan (이럴 땐 이렇게, 5단계 안내)**
+Korean Law MCP Server v4.2.1 - 법제처 42개 API → 17개 통합 도구 (내부 93개) + 9개 시나리오 + 자연어 CLI + HTTP stateless + 판례 토큰 74% 감축 + **verify_citations (LLM 환각 방지)** + **impact_map (조문 영향 그래프)** + **time_travel (시점 diff)** + **action_plan (이럴 땐 이렇게, 5단계 안내)**
 
 ## Structure
 
@@ -133,7 +133,7 @@ get_law_text(mst, jo="006300") → 제63조(휴직) 조회
 | `lib/fetch-with-retry.ts` | 30초 타임아웃 + 3회 재시도 + maskSensitiveUrl |
 | `lib/session-state.ts` | AsyncLocalStorage 요청 컨텍스트 (API 키) |
 | `lib/historical-utils.ts` | 연혁 raw 추출 (time_travel 시나리오용, v4.0) |
-| `lib/annex-file-parser.ts` | 별표 파싱 (kordoc 2.3 통합 파서) |
+| `lib/annex-file-parser.ts` | 별표 파싱 (kordoc 3.0 통합 파서) |
 | `lib/xml-parser.ts` | 6개 도메인별 XML 파서 |
 | `lib/tool-profiles.ts` | 도구 카테고리 매핑 (discover_tools용) |
 | `tools/meta-tools.ts` | discover_tools + execute_tool (전문 도구 접근) |
