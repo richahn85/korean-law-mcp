@@ -69,7 +69,7 @@
 | 도구 | 설명 |
 |------|------|
 | `legal_research` | 다단계 리서치 — `task` 8종(full_research·law_system·action_basis·dispute_prep·amendment_track·ordinance_compare·procedure_detail·document_review)으로 아래 체인 도구 8개를 디스패치 |
-| `legal_analysis` | 정밀 분석/검증 — `mode` 4종(verify_citations·cite_check·applicable_law·impact_map)으로 아래 킬러 기능 4개를 디스패치 |
+| `legal_analysis` | 정밀 분석/검증 — `mode` 4종(verify_citations·cite_check·applicable_law·impact_map)으로 아래 킬러 기능 4개를 디스패치. 비용 옵션 패스스루: `maxCitations`(기본 15), `display`(기본 20), `deepScan`(기본 true), `includeOrdinances`(기본 true), `includeMermaid`(기본 true) — v4.4.1 |
 
 ### 검색 (11개)
 

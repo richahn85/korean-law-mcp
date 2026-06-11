@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.4.1] - 2026-06-11
+
+### Fixed — 광고 스키마 required 버그 + 통합 진입점 보강 (시니어 리뷰 반영)
+
+- **광고 스키마 required 버그**: `z.toJSONSchema()`가 기본 `io:"output"` 모드라 `.default()` 필드를 required로 직렬화 — `legal_research.task`("미지정 시 full_research"인데 required로 광고), `search_law.display`가 강제 입력으로 노출되던 문제. `{ io: "input" }` 명시로 수정
+- **scenario 무음 폐기 제거**: task와 비호환인 scenario를 조용히 버리던 것을 응답 첫 줄 경고 노트로 명시 (`⚠ scenario=X는 task=Y와 비호환이라 무시하고 자동 감지로 대체`). 호출 LLM이 파라미터 무시를 인지 가능
+- **task↔scenario 호환표 단일화**: 수동 `TASK_SCENARIOS` Set + `as` 캐스트 제거 → 체인 스키마(`chains.ts`)의 `shape.scenario`에서 직접 파생(`pickScenario`). 체인 enum 변경 시 자동 추종, 드리프트 원천 차단
+- **`legal_analysis` 비용 옵션 패스스루**: `maxCitations`·`display`·`deepScan`·`includeOrdinances`·`includeMermaid`를 하드코딩에서 optional 파라미터로 — 비싼 변형(deepScan 본문 스캔, 전국 조례 팬아웃, mermaid)을 노출 프로필에서 직접 끌 수 있음. 기본값은 원본 도구와 동일
+- **타입 통일**: `legal-research.ts`의 `Awaited<ReturnType<...>>` 핵 제거 → `LooseToolResponse`로 통일
+- **테스트 신설**: `test-legal-research-analysis-dispatch.cjs` — 광고 스키마 계약(io:input required + apiKey 숨김), task×scenario 호환 매트릭스(6×9+미지정), 필수 파라미터 가드, withNote 주입, TOOL_COUNTS 파생값
+- 문서 정리: CLAUDE.md stale 노출 수(19개→9개), API.md에 legal_analysis 패스스루 옵션 표기
+
 ## [4.4.0] - 2026-06-11
 
 ### Changed — 노출 도구 통폐합 19개 → 9개 (컨텍스트 52% 감축)

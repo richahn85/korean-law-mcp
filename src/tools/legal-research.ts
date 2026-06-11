@@ -4,18 +4,22 @@
  * 기존 chain_* 8개를 task 파라미터 하나로 통합해 MCP 노출 도구 수와
  * ListTools 컨텍스트 비용을 줄인다. 기존 chain_* 도구는 allTools에
  * 그대로 남아 직접 호출/execute_tool 경유가 계속 동작한다 (하위호환).
+ *
+ * task별 허용 scenario는 체인 스키마(chains.ts)에서 직접 파생 —
+ * 별도 호환표를 두지 않아 체인 쪽 enum 변경 시 자동 추종된다 (v4.4.1).
  */
 
 import { z } from "zod"
 import type { LawApiClient } from "../lib/api-client.js"
+import type { LooseToolResponse } from "../lib/types.js"
 import {
-  chainLawSystem,
-  chainActionBasis,
+  chainLawSystem, chainLawSystemSchema,
+  chainActionBasis, chainActionBasisSchema,
   chainDisputePrep,
-  chainAmendmentTrack,
-  chainOrdinanceCompare,
-  chainFullResearch,
-  chainProcedureDetail,
+  chainAmendmentTrack, chainAmendmentTrackSchema,
+  chainOrdinanceCompare, chainOrdinanceCompareSchema,
+  chainFullResearch, chainFullResearchSchema,
+  chainProcedureDetail, chainProcedureDetailSchema,
   chainDocumentReview,
 } from "./chains.js"
 
@@ -53,20 +57,39 @@ export const LegalResearchSchema = z.object({
 
 export type LegalResearchInput = z.infer<typeof LegalResearchSchema>
 
-type ToolResponse = Awaited<ReturnType<typeof chainFullResearch>>
-
-/** task별 허용 시나리오 — 비호환 시나리오는 무시하고 자동 감지에 맡긴다 */
-const TASK_SCENARIOS: Record<string, Set<string>> = {
-  law_system: new Set(["delegation", "impact"]),
-  action_basis: new Set(["penalty"]),
-  amendment_track: new Set(["timeline", "time_travel"]),
-  ordinance_compare: new Set(["compliance"]),
-  full_research: new Set(["customs", "action_plan"]),
-  procedure_detail: new Set(["manual"]),
-}
+type ToolResponse = LooseToolResponse
 
 function inputError(message: string): ToolResponse {
   return { content: [{ type: "text", text: message }], isError: true }
+}
+
+/**
+ * 체인 스키마의 scenario 필드로 입력 scenario를 검증한다.
+ * 비호환이면 버리고(자동 감지로 폴백) 경고 노트를 함께 반환 —
+ * 호출 LLM이 자기 파라미터가 무시된 것을 알 수 있게 한다.
+ */
+export function pickScenario<S extends z.ZodType>(
+  schema: S, scenario: string | undefined, task: string
+): { value: z.infer<S>; note?: string } {
+  const result = schema.safeParse(scenario)
+  if (result.success) return { value: result.data as z.infer<S> }
+  return {
+    value: undefined as z.infer<S>,
+    note: `⚠ scenario=${scenario}는 task=${task}와 비호환이라 무시하고 자동 감지로 대체했습니다.`,
+  }
+}
+
+/** 경고 노트를 응답 첫 줄에 주입 */
+export function withNote(note: string | undefined, res: ToolResponse): ToolResponse {
+  if (!note) return res
+  return { ...res, content: [{ type: "text", text: note }, ...res.content] }
+}
+
+/** scenario 필드가 없는 task에 scenario가 들어온 경우의 경고 */
+function droppedNote(scenario: string | undefined, task: string): string | undefined {
+  return scenario
+    ? `⚠ task=${task}는 scenario를 지원하지 않아 scenario=${scenario}를 무시했습니다.`
+    : undefined
 }
 
 export async function legalResearch(
@@ -77,53 +100,52 @@ export async function legalResearch(
 
   if (task === "document_review") {
     if (!input.text) return inputError("task=document_review에는 text(문서 전문)가 필요합니다.")
-    return chainDocumentReview(apiClient, {
+    return withNote(droppedNote(input.scenario, task), await chainDocumentReview(apiClient, {
       text: input.text,
       maxClauses: input.maxClauses ?? 15,
       apiKey: input.apiKey,
-    })
+    }))
   }
 
   if (!input.query) return inputError(`task=${task}에는 query가 필요합니다.`)
   const query = input.query
-
-  // 비호환 시나리오는 버리고 각 체인의 자동 감지에 맡긴다
-  const scenario = input.scenario && TASK_SCENARIOS[task]?.has(input.scenario)
-    ? input.scenario
-    : undefined
   const apiKey = input.apiKey
 
   switch (task) {
-    case "law_system":
-      return chainLawSystem(apiClient, {
-        query, articles: input.articles,
-        scenario: scenario as "delegation" | "impact" | undefined, apiKey,
-      })
-    case "action_basis":
-      return chainActionBasis(apiClient, {
-        query, scenario: scenario as "penalty" | undefined, apiKey,
-      })
+    case "law_system": {
+      const { value: scenario, note } = pickScenario(chainLawSystemSchema.shape.scenario, input.scenario, task)
+      return withNote(note, await chainLawSystem(apiClient, {
+        query, articles: input.articles, scenario, apiKey,
+      }))
+    }
+    case "action_basis": {
+      const { value: scenario, note } = pickScenario(chainActionBasisSchema.shape.scenario, input.scenario, task)
+      return withNote(note, await chainActionBasis(apiClient, { query, scenario, apiKey }))
+    }
     case "dispute_prep":
-      return chainDisputePrep(apiClient, { query, domain: input.domain, apiKey })
-    case "amendment_track":
-      return chainAmendmentTrack(apiClient, {
-        query, mst: input.mst, lawId: input.lawId,
-        scenario: scenario as "timeline" | "time_travel" | undefined,
+      return withNote(droppedNote(input.scenario, task),
+        await chainDisputePrep(apiClient, { query, domain: input.domain, apiKey }))
+    case "amendment_track": {
+      const { value: scenario, note } = pickScenario(chainAmendmentTrackSchema.shape.scenario, input.scenario, task)
+      return withNote(note, await chainAmendmentTrack(apiClient, {
+        query, mst: input.mst, lawId: input.lawId, scenario,
         fromDate: input.fromDate, toDate: input.toDate, apiKey,
-      })
-    case "ordinance_compare":
-      return chainOrdinanceCompare(apiClient, {
-        query, parentLaw: input.parentLaw,
-        scenario: scenario as "compliance" | undefined, apiKey,
-      })
-    case "procedure_detail":
-      return chainProcedureDetail(apiClient, {
-        query, scenario: scenario as "manual" | undefined, apiKey,
-      })
+      }))
+    }
+    case "ordinance_compare": {
+      const { value: scenario, note } = pickScenario(chainOrdinanceCompareSchema.shape.scenario, input.scenario, task)
+      return withNote(note, await chainOrdinanceCompare(apiClient, {
+        query, parentLaw: input.parentLaw, scenario, apiKey,
+      }))
+    }
+    case "procedure_detail": {
+      const { value: scenario, note } = pickScenario(chainProcedureDetailSchema.shape.scenario, input.scenario, task)
+      return withNote(note, await chainProcedureDetail(apiClient, { query, scenario, apiKey }))
+    }
     case "full_research":
-    default:
-      return chainFullResearch(apiClient, {
-        query, scenario: scenario as "customs" | "action_plan" | undefined, apiKey,
-      })
+    default: {
+      const { value: scenario, note } = pickScenario(chainFullResearchSchema.shape.scenario, input.scenario, task)
+      return withNote(note, await chainFullResearch(apiClient, { query, scenario, apiKey }))
+    }
   }
 }

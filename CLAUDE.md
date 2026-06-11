@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Korean Law MCP Server v4.4.0 - 법제처 42개 API → 9개 통합 도구 (내부 97개) + 9개 시나리오 + 자연어 CLI + HTTP stateless + 판례 토큰 74% 감축 + **legal_research (체인 8종 통합, task 파라미터)** + **legal_analysis (인용검증·판례생사·행위시법·영향그래프 통합, mode 파라미터)** + **time_travel (시점 diff)** + **action_plan (이럴 땐 이렇게, 5단계 안내)**
+Korean Law MCP Server v4.4.1 - 법제처 42개 API → 9개 통합 도구 (내부 97개) + 9개 시나리오 + 자연어 CLI + HTTP stateless + 판례 토큰 74% 감축 + **legal_research (체인 8종 통합, task 파라미터)** + **legal_analysis (인용검증·판례생사·행위시법·영향그래프 통합, mode 파라미터)** + **time_travel (시점 diff)** + **action_plan (이럴 땐 이렇게, 5단계 안내)**
 
 ## Structure
 
@@ -154,6 +154,6 @@ get_law_text(mst, jo="006300") → 제63조(휴직) 조회
 ## Docs
 
 상세 정보는 별도 문서 참조:
-- [docs/API.md](docs/API.md) - 도구 레퍼런스 (19개 노출 + 76개 execute_tool 접근)
+- [docs/API.md](docs/API.md) - 도구 레퍼런스 (9개 노출, 미노출 도구는 execute_tool 또는 직접 호출로 접근)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - 시스템 설계, 데이터 플로우
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) - 개발 가이드

@@ -4,7 +4,8 @@
  * verify_citations·cite_check·applicable_law·impact_map을 mode 파라미터로
  * 통합해 MCP 노출 도구 수를 줄인다. 원본 도구는 allTools에 그대로 남아
  * 직접 호출/execute_tool 경유가 계속 동작한다 (하위호환).
- * 세부 옵션(deepScan, includeMermaid 등)은 원본 도구의 기본값을 따른다.
+ * 비용이 큰 옵션(deepScan, includeOrdinances, includeMermaid 등)은
+ * 패스스루로 노출 — 기본값은 원본 도구와 동일 (v4.4.1).
  */
 
 import { z } from "zod"
@@ -28,6 +29,16 @@ export const LegalAnalysisSchema = z.object({
     .describe("[impact_map 필수, applicable_law 선택] 조문 번호 (예: '제103조', '제10조의2')"),
   date: z.string().optional()
     .describe("[applicable_law 필수] 기준일 — 행위·계약·처분 시점 (예: '2023-05-10', '20230510')"),
+  maxCitations: z.number().min(1).max(30).optional()
+    .describe("[verify_citations] 검증할 최대 인용 개수 (기본 15, 많을수록 느림)"),
+  display: z.number().min(1).max(50).optional()
+    .describe("[cite_check] 후속 인용 판례 최대 표시 수 (기본 20)"),
+  deepScan: z.boolean().optional()
+    .describe("[cite_check] 후속 인용 상위 판례 본문 정밀 스캔 (기본 true, false면 빠르지만 변경·폐기 감지 생략)"),
+  includeOrdinances: z.boolean().optional()
+    .describe("[impact_map] 자치법규 인용 검색 포함 (기본 true, false면 전국 조례 팬아웃 생략)"),
+  includeMermaid: z.boolean().optional()
+    .describe("[impact_map] mermaid 그래프 코드 출력 (기본 true)"),
   apiKey: z.string().optional(),
 })
 
@@ -48,10 +59,17 @@ export async function legalAnalysis(
   switch (input.mode) {
     case "verify_citations":
       if (!input.text) return inputError("mode=verify_citations에는 text가 필요합니다.")
-      return verifyCitations(apiClient, { text: input.text, maxCitations: 15, apiKey })
+      return verifyCitations(apiClient, {
+        text: input.text, maxCitations: input.maxCitations ?? 15, apiKey,
+      })
     case "cite_check":
       if (!input.caseNumber) return inputError("mode=cite_check에는 caseNumber가 필요합니다.")
-      return citeCheck(apiClient, { caseNumber: input.caseNumber, display: 20, deepScan: true, apiKey })
+      return citeCheck(apiClient, {
+        caseNumber: input.caseNumber,
+        display: input.display ?? 20,
+        deepScan: input.deepScan ?? true,
+        apiKey,
+      })
     case "applicable_law":
       if (!input.lawName || !input.date) return inputError("mode=applicable_law에는 lawName과 date가 필요합니다.")
       return applicableLaw(apiClient, { lawName: input.lawName, date: input.date, jo: input.jo, apiKey })
@@ -59,7 +77,9 @@ export async function legalAnalysis(
       if (!input.lawName || !input.jo) return inputError("mode=impact_map에는 lawName과 jo가 필요합니다.")
       return impactMap(apiClient, {
         lawName: input.lawName, jo: input.jo,
-        includeOrdinances: true, includeMermaid: true, apiKey,
+        includeOrdinances: input.includeOrdinances ?? true,
+        includeMermaid: input.includeMermaid ?? true,
+        apiKey,
       })
   }
 }

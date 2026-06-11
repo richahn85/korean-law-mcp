@@ -723,11 +723,13 @@ export const allTools: McpTool[] = [
 ]
 
 /**
- * ZodEffects(.refine(), .transform() 등)를 벗겨내고 내부 ZodObject를 반환
+ * Zod 스키마 → MCP 광고용 JSON Schema 변환 (apiKey 숨김 포함)
  */
-function toMcpInputSchema(schema: unknown) {
+export function toMcpInputSchema(schema: unknown) {
   // Zod v4: z.toJSONSchema()로 직접 변환 (zod-to-json-schema는 Zod v4 미지원)
-  const rawSchema = z.toJSONSchema(schema as z.ZodType) as any
+  // io:"input" 필수 — 기본 "output" 모드는 .default() 필드를 required로 직렬화함
+  // (legal_research.task, search_law.display가 required로 광고되던 버그, v4.4.1)
+  const rawSchema = z.toJSONSchema(schema as z.ZodType, { io: "input" }) as any
 
   if (rawSchema?.type === "object" && rawSchema?.properties) {
     // apiKey는 HTTP 헤더(session-state)로 전달되는 게 정식 경로 — 광고 스키마에서 숨김.
