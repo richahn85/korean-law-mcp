@@ -725,7 +725,7 @@ export const allTools: McpTool[] = [
 /**
  * Zod 스키마 → MCP 광고용 JSON Schema 변환 (apiKey 숨김 포함)
  */
-export function toMcpInputSchema(schema: unknown) {
+function toMcpInputSchema(schema: unknown) {
   // Zod v4: z.toJSONSchema()로 직접 변환 (zod-to-json-schema는 Zod v4 미지원)
   // io:"input" 필수 — 기본 "output" 모드는 .default() 필드를 required로 직렬화함
   // (legal_research.task, search_law.display가 required로 광고되던 버그, v4.4.1)
