@@ -25,7 +25,7 @@
 5. **school-mcp 당분간 서비스 중단** (`fly scale count 0`, 2026-07-02) — 앱·이름·주소는 유지, 복구는 `fly scale count 1 -a school-mcp`. 참고: 계정에 $5 미만 청구 면제가 있어 월 총액을 $5 아래로 낮추는 게 목표
 6. **대책 1(1머신 통합) 실행 완료** (2026-07-02) — [gomdori-mcp](https://github.com/chrisryugj/gomdori-mcp) 통합 호스트를 **korean-law-mcp 앱에 배포** (512MB+swap, law 앱을 호스트로 쓴 이유: 최대 사용자군의 fly.dev 주소 무단절 유지). 신규 공식 주소는 `mcp.gomdori.app/law` `/stats` `/patent` `/archhub` `/school` **5종** (Vercel DNS CNAME + fly certs). 기존 `korean-law-mcp.fly.dev/mcp`는 하위호환 유지. 시크릿 6종(LAW_OC·KOSIS·KIPRIS·ARCHHUB·SCHOOLINFO·NEIS) korean-law-mcp 앱으로 이관
    - 각 레포 CLAUDE.md에 배포 규칙 심음(law는 fly.toml.disabled로 자체 deploy 차단 + deploy.md 개정). 맥미니 클론들도 동기화 완료
-   - **남은 정리**: 구 stats·patent·archhub fly 앱은 기존 사용자 이전 기간 동안 병행 운영 중 (이 기간엔 비용 절감 없음). README·조코헌트 주소를 mcp.gomdori.app으로 갱신하고, 이전이 충분히 진행되면 구 앱 `fly scale count 0` → 그때 월 ~$3~4(=$5 면제로 실질 $0) 달성
+   - **구 앱 정리 완료** (2026-07-02 당일): 5개 레포 README를 mcp.gomdori.app 주소로 갱신 후 구 stats·patent·archhub 앱 `fly scale count 0` (school은 기중단). 이제 fly 전체에 **korean-law-mcp 머신 1대만** 가동 — 월 ~$3.2 = $5 면제로 **실질 $0 달성**. 구 fly.dev 주소 중 korean-law-mcp.fly.dev만 살아있음(통합 호스트 겸용). 남은 수동 작업: 조코헌트 프로덕트 페이지 주소 갱신(로그인 필요)
    - stats 재배포 시 주의: 워킹트리에 pnpm 11 잔여물로 pnpm-lock.yaml이 변조돼 있으면 `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` — `git checkout -- pnpm-lock.yaml`로 복원 후 배포
 
 ## 남은 대책 후보
