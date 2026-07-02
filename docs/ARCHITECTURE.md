@@ -60,7 +60,7 @@
 
 1. **Separation of Concerns**: Tools → Shared Libs → API Client
 2. **Single Responsibility**: 파일당 200줄 미만, 단일 기능
-3. **Centralized Tool Registry**: 64개 도구를 `tool-registry.ts`의 `allTools[]`에 등록
+3. **Centralized Tool Registry**: 97개 도구를 `tool-registry.ts`의 `allTools[]`에 등록
 4. **Type Safety**: TypeScript strict mode + Zod validation
 5. **Stateless HTTP**: MCP StreamableHTTP stateless 모드 — 요청마다 fresh Server+Transport, AsyncLocalStorage로 요청별 API 키 격리 (재시작·스케일아웃 내성)
 6. **Network Resilience**: 30s timeout, 3 retries with exponential backoff
@@ -74,7 +74,7 @@
 
 - MCP 서버 초기화
 - CLI 인자 파싱 (`--mode stdio|sse|http`, `--port`)
-- `registerTools(server, apiClient)` 호출로 64개 도구 일괄 등록
+- `registerTools(server, apiClient)` 호출로 97개 도구 일괄 등록
 
 ### Tool Registry (`src/tool-registry.ts`)
 
@@ -85,7 +85,7 @@
 
 ### CLI (`src/cli.ts`)
 
-- `korean-law <tool> --param value` 형태로 64개 도구 직접 실행
+- `korean-law <tool> --param value` 형태로 97개 도구 직접 실행
 - `korean-law list [--category ...]`: 도구 목록/카테고리 필터
 - `korean-law help <tool>`: 도구 상세 파라미터
 - `--json-input`: JSON으로 복합 파라미터 전달
@@ -210,6 +210,6 @@ docker run -e LAW_OC=your-key -p 3000:3000 korean-law-mcp
 
 ## Related Docs
 
-- [API.md](API.md) - 64개 도구 레퍼런스
+- [API.md](API.md) - 97개 도구 레퍼런스
 - [DEVELOPMENT.md](DEVELOPMENT.md) - 개발자 가이드
 - [README.md](../README.md) - 시작 가이드
