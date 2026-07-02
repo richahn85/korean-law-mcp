@@ -8,7 +8,7 @@
 |---|---|---|---|
 | korean-law-mcp | 256MB | 24/7 가동 | **실사용 트래픽** (4분간 620건 — claude.ai 커넥터 237, python/Go/node 클라이언트, Claude Code, Cursor). 비용 정당 |
 | archhub-mcp | 512MB | 24/7 가동 | **실사용 트래픽** (4분간 137건). 비용 정당 |
-| korean-stats-mcp | 512MB | 24/7 가동 | 실트래픽 0인데 **~1분 간격 외부 핑**이 계속 깨움 → 순수 낭비. law 로그에 UptimeRobot UA가 찍히는데 **우리가 설정한 모니터가 아님** — MCP 디렉토리·등록처(조코헌트 등)의 제3자 상태 모니터링 추정 |
+| korean-stats-mcp | 512MB | 24/7 가동 | **실사용 트래픽** (22:38 KST 7분간 139건 — node 66·python-httpx 36·Claude-User 26·copilot·Go). 낮 한산 시간대엔 4분간 0건도 관찰될 만큼 bursty. 초기에 "제3자 핑 낭비"로 오판했으나 ACCESS_LOG 실측으로 정정(2026-07-02) |
 | school-mcp | 1GB ×2대 | 중복 | `fly deploy` 기본값이 머신 2대 생성 |
 | korean-patent-mcp | 256MB ×2대 | 중복 | 〃 (autostop suspend는 정상 작동) |
 
@@ -20,24 +20,26 @@
 
 1. school·patent 중복 머신 각 1대 삭제 (`fly scale count 1`) → **월 ~$7.6 절감**
 2. law-mcp 머신 교체 + `ACCESS_LOG=1` 환경변수 게이트 액세스 로그 추가 (`src/server/http-server.ts`, 쿼리스트링 제외로 oc= API 키 유출 방지) — 트래픽 출처 진단용
-3. stats 머신 autostop을 suspend → stop으로 전환 (`fly machine update --autostop=stop`)
-   - ⚠️ **stats의 fly.toml은 여전히 `suspend`** — 재배포하면 설정이 되돌아간다. 재배포 전 fly.toml의 `auto_stop_machines`를 `'stop'`으로 수정할 것
+3. stats 머신 autostop을 suspend → stop으로 전환 + fly.toml에도 반영·재배포 완료 ('suspend'는 proxy가 재우기를 실행 못 하는 증상 실측 — 'stop'인 school만 정상 사이클)
+4. stats에도 `ACCESS_LOG=1` 액세스 로그 이식·배포 (`src/server-http.ts`) — 이 로그로 실사용 트래픽 확인
+   - stats 재배포 시 주의: 워킹트리에 pnpm 11 잔여물로 pnpm-lock.yaml이 변조돼 있으면 `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` — `git checkout -- pnpm-lock.yaml`로 복원 후 배포
 
 ## 남은 대책 후보
 
-stats를 깨우는 핑은 제3자 소유라 **우리 쪽에서 끌 수 없다**. 어떤 요청이든 도착 즉시 `auto_start`가 머신을 깨우므로 앱 레벨 차단(UA 거부 등)도 과금 방지엔 무효.
+**결론: 5개 앱 모두 실사용 트래픽이 상당하다.** 6월 $16의 실체는 "쓰이는 서비스의 인프라 비용"이고, 순수 낭비는 중복 머신(~$7.6/월, 제거 완료)뿐이었다. law 로그에 UptimeRobot UA(제3자 등록 모니터, 우리 것 아님)가 1분 간격으로 찍히지만 실트래픽 대비 미미해 비용 기여는 무시 수준.
+
+어떤 요청이든 fly 엣지 도착 즉시 `auto_start`가 머신을 깨우고 과금이 시작되므로, 앱 레벨 차단(UA 403 등)은 과금 방지에 무효라는 점은 유효한 교훈.
 
 | # | 대책 | 절감 | 난이도 / 리스크 |
 |---|---|---|---|
-| 1 | **5개 MCP를 1머신으로 통합** (단일 앱에 `/law` `/stats` `/patent` `/school` `/archhub` 경로 라우팅) — 근본 해결 | 총액 월 $2~3까지 | 구조 변경. 엔드포인트 URL 변경(구 앱에 리다이렉트 필요). archhub의 "단일 머신 필수" 제약과는 오히려 호환. law+archhub 트래픽 합쳐도 512MB 하나로 충분. 제3자 핑도 이미 깨어 있는 머신에 떨어지므로 무해화됨 |
-| 2 | stats에 액세스 로그 추가해 핑 주체 확정 (law의 `ACCESS_LOG` 패턴 이식) | 0 (진단용) | stats 재배포는 pnpm 10.28 고정 함정 주의. 주체가 디렉토리 서비스면 등록 해제로 핑 제거 가능하나 마케팅 노출과 트레이드오프 |
-| 3 | school 메모리 1GB → 512MB | 월 ~$2.5 (가동 시간 비례) | PDF/HWP 파싱 OOM 리스크 — 실사용 패턴 보고 판단 |
-| 4 | 경량 앱만 Cloudflare Workers 이전 (fetch-only인 law·patent) | 해당 앱 $0 | 네이티브 의존성 앱은 불가 — stats(sharp+onnx), archhub(pandas), school(PDF/HWP 파싱) |
-| 5 | 현상 유지 (stats ~$3/월 감수) | 0 | 제3자 모니터링 = 디렉토리 노출의 부산물이라 마케팅 비용으로 볼 수도 있음 |
+| 1 | **5개 MCP를 1머신으로 통합** (단일 앱에 `/law` `/stats` `/patent` `/school` `/archhub` 경로 라우팅) — 유일하게 큰 레버 | 총액 월 $2~3까지 | 구조 변경. 엔드포인트 URL 변경(구 앱에 리다이렉트 필요). archhub의 "단일 머신 필수" 제약과는 오히려 호환. 트래픽이 전부 I/O 바운드 API 프록시라 512MB~1GB 하나로 충분 |
+| 2 | school 메모리 1GB → 512MB | 월 ~$2.5 (가동 시간 비례) | PDF/HWP 파싱 OOM 리스크 — 실사용 패턴 보고 판단 |
+| 3 | 경량 앱만 Cloudflare Workers 이전 (fetch-only인 law·patent) | 해당 앱 $0 | 네이티브 의존성 앱은 불가 — stats(sharp+onnx), archhub(pandas), school(PDF/HWP 파싱) |
+| 4 | 현상 유지 (~$8~9/월 감수) | 0 | 실사용자가 내는 트래픽이라 서비스 운영비로 보는 게 타당. 사용량 성장 시 통합(#1)만이 스케일 가능한 답 |
 
 ## 예상 비용 경로
 
-$16 (6월) → **~$8~9** (조치 완료 시점) → **~$2~3** (대책 1 통합 시)
+$16 (6월) → **~$8~9** (중복 머신 제거 후) → **~$2~3** (대책 1 통합 시)
 
 ## 진단 시 쓴 명령 메모
 
@@ -47,5 +49,5 @@ fly ips list -a <app>                     # dedicated IPv4 여부 ($2/월)
 fly machine status <id> -a <app>          # 이벤트 로그 (suspend가 cancel되는지)
 fly machine suspend <id> -a <app>         # 수동 재우기 — 즉시 깨어나면 외부 트래픽 존재
 fly ssh console -a <app> -C "cat /proc/net/tcp /proc/net/tcp6"  # 인바운드 연결 실측
-fly secrets set ACCESS_LOG=1 -a korean-law-mcp   # 요청 UA 로깅 켜기 (law만 지원)
+fly secrets set ACCESS_LOG=1 -a <app>     # 요청 UA 로깅 켜기 (law·stats 지원, 현재 둘 다 켜져 있음)
 ```
