@@ -82,7 +82,7 @@ export const allTools: McpTool[] = [
   // === 법령 검색/조회 ===
   {
     name: "search_law",
-    description: "[법령검색] 법령명 키워드검색 → lawId, mst 획득. 약칭 자동변환. 법령 조회 전 식별자 확보용.",
+    description: "[법령검색] 법령명 키워드검색 → lawId, mst 획득. 약칭 자동변환. 제명변경·시행예정 개정 자동 병기. 법령 조회 전 식별자 확보용.",
     schema: SearchLawSchema,
     handler: searchLaw
   },

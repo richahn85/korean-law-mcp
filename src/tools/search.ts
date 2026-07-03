@@ -9,6 +9,7 @@ import { lawCache } from "../lib/cache.js"
 import { truncateResponse } from "../lib/schemas.js"
 import { formatToolError, noResultHint } from "../lib/errors.js"
 import { expandLawQuery, normalizeAliasKey, resolveLawAlias } from "../lib/search-normalizer.js"
+import { buildUpcomingNotes, fetchUpcomingLaws } from "../lib/upcoming-laws.js"
 import { searchAdminRule } from "./admin-rule.js"
 
 export const SearchLawSchema = z.object({
@@ -94,6 +95,15 @@ export async function searchLaw(
     }
 
     if (laws.length === 0) {
+      // 공포됐지만 미시행인 신규 법령은 현행(target=law) 검색에 안 잡힘 → 시행예정 보조검색
+      const upcomingOnly = await fetchUpcomingLaws(apiClient, input.query, input.apiKey)
+      if (upcomingOnly.length > 0) {
+        const text = `현행 법령 0건 — 단, 공포 후 시행 대기 중인 법령이 있습니다:\n\n` +
+          buildUpcomingNotes([], upcomingOnly) +
+          `⚠️ 현재 시점에는 아직 효력이 없는 법령입니다. 현행 기준 답변에 인용하지 마세요.\n`
+        return { content: [{ type: "text", text: truncateResponse(text) }] }
+      }
+
       // Fallback: 외국환거래규정·은행업감독규정 등 "규정/고시"는 행정규칙(고시)임.
       // 일반 법령에 없으면 search_admin_rule 자동 시도.
       const adminFallback = await searchAdminRule(apiClient, {
@@ -161,6 +171,12 @@ export async function searchLaw(
         resultText += formatHit(counter, partial[i])
       }
     }
+
+    // 시행예정 병기: 제명변경 개정(구명칭→신명칭)이 공포~시행 사이면 신명칭 검색 시
+    // "정확매칭 없음"만 떠서 LLM이 "법령 없음"으로 오판 → 신·구 명칭 매핑을 명시
+    const upcoming = await fetchUpcomingLaws(apiClient, usedQuery, input.apiKey)
+    const upcomingNotes = buildUpcomingNotes(laws, upcoming)
+    if (upcomingNotes) resultText += upcomingNotes
 
     // 다음 단계 힌트: 정확매칭이 있으면 그 첫 항목, 없으면 부분매칭 첫 항목 안내
     const primary = exact[0] || partial[0]

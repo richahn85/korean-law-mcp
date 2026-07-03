@@ -75,7 +75,7 @@
 
 | 도구 | target | 설명 |
 |------|--------|------|
-| `search_law` | `law` | 법령명 검색 (약칭 자동 인식) |
+| `search_law` | `law`+`eflaw` | 법령명 검색 (약칭 자동 인식, 제명변경·시행예정 개정 자동 병기) |
 | `search_admin_rule` | `admrul` | 훈령/예규/고시/공고 |
 | `search_ordinance` | `ordin` | 조례/규칙 |
 | `search_precedents` | `prec` | 판례 |
