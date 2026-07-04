@@ -775,6 +775,26 @@ const V3_EXPOSED = new Set([
   "discover_tools", "execute_tool",
 ])
 
+/**
+ * 마켓플레이스(playmcp 등) 광고용 메타데이터.
+ * 원본 allTools 정의는 그대로 두고, ListTools 광고 시점에만 주입한다.
+ *   - 서비스명: description에 "국가법령정보 MCP" 포함 요구 충족
+ *   - annotations: MCP ToolAnnotations. 노출 9개 모두 법제처 read-only 조회(멱등) + 외부 API 호출.
+ */
+const SERVICE_NAME = "국가법령정보 MCP"
+
+const TOOL_TITLES: Record<string, string> = {
+  legal_research: "법령 리서치 (다단계 체인)",
+  legal_analysis: "법령 정밀분석 (인용검증·영향)",
+  search_law: "법령 검색",
+  get_law_text: "법령 조문 조회",
+  get_annexes: "별표·서식 조회",
+  search_decisions: "판례·결정례 통합검색",
+  get_decision_text: "판례·결정례 전문조회",
+  discover_tools: "전문도구 탐색",
+  execute_tool: "전문도구 실행",
+}
+
 // 이름 기반 O(1) 조회용 Map
 // allTools는 정적 — 모듈 로드 시 1회만 구성 (HTTP 모드에서 요청마다 재구성 방지)
 const toolMap = new Map<string, McpTool>(allTools.map(tool => [tool.name, tool]))
@@ -793,8 +813,14 @@ export function registerTools(server: Server, apiClient: LawApiClient) {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: exposedTools.map(tool => ({
       name: tool.name,
-      description: tool.description,
-      inputSchema: toMcpInputSchema(tool.schema)
+      description: `${SERVICE_NAME} — ${tool.description}`,
+      inputSchema: toMcpInputSchema(tool.schema),
+      annotations: {
+        title: TOOL_TITLES[tool.name] ?? tool.name,
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: true,
+      }
     }))
   }))
 
