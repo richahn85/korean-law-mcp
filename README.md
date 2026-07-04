@@ -1,6 +1,6 @@
 # Korean Law MCP
 
-**법제처 42개 API를 9개 도구로.** 법령, 판례, 행정규칙, 자치법규, 조약, 해석례(국세청 포함) + **LLM 환각 방지 인용 검증** + **조문 영향 그래프** + **시점 비교 자동 diff** + **이럴 땐 이렇게 — 5단계 안내** + **판례 생사 확인(Citator)** + **행위시법 판단**을 AI 어시스턴트나 터미널에서 바로 사용.
+**법제처 42개 API를 9개 도구로.** 법령, 판례, 행정규칙, 자치법규, 조약, 해석례(국세청 포함) + **LLM 환각 방지 인용 검증(실존+내용)** + **조문 영향 그래프** + **시점 비교 자동 diff** + **이럴 땐 이렇게 — 5단계 안내** + **판례 생사 확인(Citator)** + **행위시법 판단**을 AI 어시스턴트나 터미널에서 바로 사용.
 
 [![npm version](https://img.shields.io/npm/v/korean-law-mcp.svg)](https://www.npmjs.com/package/korean-law-mcp)
 [![MCP 1.27](https://img.shields.io/badge/MCP-1.27-blue)](https://modelcontextprotocol.io)
@@ -21,6 +21,11 @@
 ![Korean Law MCP 데모](./demo.gif)
 
 ---
+
+## v4.6.0 — 인용 검증 강화(내용까지) + 클라우드 안티봇 우회
+
+- **`verify_citations` 내용 검증**: 조문 실존 확인에 더해, `민법 제750조(계약해제)`처럼 **존재하는 조문에 엉뚱한 제목을 붙인 내용 환각**을 `[CONTENT_MISMATCH]`로 탐지. 기존엔 제750조만 실존하면 통과했으나, 이제 인용한 조문 제목이 실제와 일치하는지 대조합니다(LexDiff `citation-content-matcher` 이식 — 정규화 후 공통 substring + 문자 bigram Jaccard). `legal_analysis(mode=verify_citations)`에도 동일 적용
+- **law.go.kr JS 안티봇 우회**: 클라우드 IP(GCP/AWS/Fly)에서 법제처가 API 데이터 대신 `location.assign` JS 리다이렉트 페이지를 반환할 때, 난독화 URL을 파싱해 토큰 URL로 자동 우회(최대 3홉, 토큰 URL 404 시 원본 재시도). 로컬/등록 IP에선 no-op — `Referer` 주입(v4.0.9)으로도 안 뚫리는 클라우드 환경의 방어층
 
 ## v4.5.0 — 시행예정 법령 감지 (제명변경 오판 방지)
 

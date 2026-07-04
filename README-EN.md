@@ -1,6 +1,6 @@
 # Korean Law MCP
 
-**42 APIs compressed into 9 tools.** Search, retrieve, and analyze Korean law — statutes, precedents, ordinances, treaties + **LLM hallucination guard for legal citations** + **precedent citator (cite_check)** + **point-in-time law resolution (applicable_law)**.
+**42 APIs compressed into 9 tools.** Search, retrieve, and analyze Korean law — statutes, precedents, ordinances, treaties + **LLM hallucination guard for legal citations (existence + content)** + **precedent citator (cite_check)** + **point-in-time law resolution (applicable_law)**.
 
 [![npm version](https://img.shields.io/npm/v/korean-law-mcp.svg)](https://www.npmjs.com/package/korean-law-mcp)
 [![MCP 1.27](https://img.shields.io/badge/MCP-1.27-blue)](https://modelcontextprotocol.io)
@@ -22,6 +22,11 @@
 ![Korean Law MCP demo](./demo.gif)
 
 ---
+
+## v4.6.0 — Citation verification goes deeper (content) + cloud anti-bot
+
+- **`verify_citations` content check**: Beyond confirming an article exists, it now catches content hallucinations like `민법 제750조(계약해제)` — a real article (§750) tagged with the wrong title. It compares the cited article title against the actual one (`[CONTENT_MISMATCH]`) using LexDiff's `citation-content-matcher` (normalized common substring + character bigram Jaccard). Same for `legal_analysis(mode=verify_citations)`.
+- **law.go.kr JS anti-bot bypass**: When 법제처 serves a `location.assign` JS redirect instead of API data to cloud IPs (GCP/AWS/Fly), the client parses the obfuscated URL and follows the tokenized redirect (up to 3 hops, retrying the original URL on a 404). No-op on local/registered IPs — a defense layer for cloud deployments where `Referer` injection (v4.0.9) isn't enough.
 
 ## What's New in v4.3 — Precedent Citator + Point-in-Time Law
 
