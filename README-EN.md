@@ -1,6 +1,6 @@
 # Korean Law MCP
 
-**42 APIs compressed into 9 tools.** Search, retrieve, and analyze Korean law — statutes, precedents, ordinances, treaties + **LLM hallucination guard for legal citations (existence + content)** + **precedent citator (cite_check)** + **point-in-time law resolution (applicable_law)**.
+**42 APIs compressed into 10 tools.** Search, retrieve, and analyze Korean law — statutes, precedents, ordinances, treaties + **LLM hallucination guard for legal citations (existence + content)** + **precedent citator (cite_check)** + **point-in-time law resolution (applicable_law)** + **ordinance revision radar (ordinance_radar)**.
 
 [![npm version](https://img.shields.io/npm/v/korean-law-mcp.svg)](https://www.npmjs.com/package/korean-law-mcp)
 [![MCP 1.27](https://img.shields.io/badge/MCP-1.27-blue)](https://modelcontextprotocol.io)
@@ -22,6 +22,15 @@
 ![Korean Law MCP demo](./demo.gif)
 
 ---
+
+## v4.7.0 — Ordinance revision radar (`ordinance_radar`)
+
+**"The parent statute changed — is our ordinance stale?"** One call answers the question local-government officials chase every year.
+
+- **Automatic basis-law extraction**: Parses the ordinance's Article 1 (Purpose) for its statutory basis — the parent act, enforcement decree, and enforcement rules cited in 「」 (including the "같은 법 시행령" shorthand). Scanning only the purpose article avoids false alarms from unrelated statutes cited in annex tables.
+- **Revision cross-check**: Compares each parent law's current enforcement date against the ordinance's enforcement date and flags "parent law amended after the ordinance took effect → review for revision", with MST identifiers for follow-up.
+- The official ordinance-linkage API (lnkOrd) has poor coverage, so this parses the standard citation format in ordinance text instead.
+- Also in this release: JSON-RPC batch requests now count each `tools/call` against rate/fallback quotas (amplification fix, per-request cap 20 via `MCP_MAX_BATCH_CALLS`), clean graceful shutdown, and exact-match-first law resolution in `get_article_history`.
 
 ## v4.6.0 — Citation verification goes deeper (content) + cloud anti-bot
 

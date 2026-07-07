@@ -23,6 +23,7 @@ import { getArticleDetail, GetArticleDetailSchema } from "./tools/article-detail
 import { getAnnexes, GetAnnexesSchema } from "./tools/annex.js"
 import { getOrdinance, GetOrdinanceSchema } from "./tools/ordinance.js"
 import { searchOrdinance, SearchOrdinanceSchema } from "./tools/ordinance-search.js"
+import { ordinanceRadar, OrdinanceRadarSchema } from "./tools/ordinance-radar.js"
 import { compareArticles, CompareArticlesSchema } from "./tools/article-compare.js"
 import { getLawTree, GetLawTreeSchema } from "./tools/law-tree.js"
 import { searchAll, SearchAllSchema } from "./tools/search-all.js"
@@ -149,6 +150,12 @@ export const allTools: McpTool[] = [
     description: "[자치법규] 조례/규칙 전문 조회. jo 파라미터로 특정 조문 본문 조회 가능.",
     schema: GetOrdinanceSchema,
     handler: getOrdinance
+  },
+  {
+    name: "ordinance_radar",
+    description: "[자치법규] 조례 정비 레이더 — 조례가 인용한 근거 상위법령(법률/시행령/시행규칙)을 본문에서 추출하고, 각 상위법의 현행 시행일과 조례 시행일을 대조해 '상위법이 조례 시행 이후 개정됨 → 정비 검토 대상'을 자동 플래그. 조례 담당 공무원의 상위법 개정 추적·조례 정비 판단용. ordinSeq(또는 id)나 ordinanceName 중 하나 지정.",
+    schema: OrdinanceRadarSchema,
+    handler: ordinanceRadar
   },
 
   // === 법령-자치법규 연계 ===
@@ -751,7 +758,7 @@ function toMcpInputSchema(schema: unknown) {
 }
 
 /**
- * v4.4.0 통합 프로필 — 9개 도구 노출, 나머지는 execute_tool로 접근
+ * v4.4.0 통합 프로필 — 노출 도구 최소화, 나머지는 execute_tool로 접근 (v4.7.0: ordinance_radar 추가로 10개)
  *
  * 노출 기준:
  *   1) 체인 도구가 fallback으로 자주 호출하는 종착 도구
@@ -772,6 +779,7 @@ const V3_EXPOSED = new Set([
   "search_law", "get_law_text",
   "get_annexes",
   "search_decisions", "get_decision_text",
+  "ordinance_radar",  // v4.7.0: 조례 정비 레이더 (조례 담당 공무원 킬러기능)
   "discover_tools", "execute_tool",
 ])
 
@@ -779,7 +787,7 @@ const V3_EXPOSED = new Set([
  * 마켓플레이스(playmcp 등) 광고용 메타데이터.
  * 원본 allTools 정의는 그대로 두고, ListTools 광고 시점에만 주입한다.
  *   - 서비스명: description에 "Korean-law-mcp" 포함 요구 충족
- *   - annotations: MCP ToolAnnotations. 노출 9개 모두 법제처 read-only 조회(멱등) + 외부 API 호출.
+ *   - annotations: MCP ToolAnnotations. 노출 도구 모두 법제처 read-only 조회(멱등) + 외부 API 호출.
  */
 const SERVICE_NAME = "Korean-law-mcp"
 

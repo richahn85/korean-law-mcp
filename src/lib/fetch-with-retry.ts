@@ -13,7 +13,7 @@ import { followLawAntibot } from "./law-antibot.js"
  */
 export function maskSensitiveUrl(url: string): string {
   if (!url) return url
-  return url.replace(/([?&](?:oc|OC|apikey|apiKey|api_key|authKey|auth_key|key)=)[^&]+/g, "$1***")
+  return url.replace(/([?&](?:oc|apikey|api_key|authkey|auth_key|key)=)[^&]+/gi, "$1***")
 }
 
 export interface FetchWithRetryOptions extends RequestInit {
