@@ -20,6 +20,12 @@
 
 ![Korean Law MCP 데모](./demo.gif)
 
+### 영상으로 보기
+
+| 소개 | Claude에 연결하기 | ChatGPT에 연결하기 |
+|:---:|:---:|:---:|
+| [<img src="https://img.youtube.com/vi/gmkuOqIV3dc/mqdefault.jpg" width="240" alt="korean-law-mcp 소개" />](https://youtu.be/gmkuOqIV3dc) | [<img src="https://img.youtube.com/vi/KaUKLOH7290/mqdefault.jpg" width="240" alt="Claude 연결 방법" />](https://youtu.be/KaUKLOH7290) | [<img src="https://img.youtube.com/vi/KCFIzervxtE/mqdefault.jpg" width="240" alt="ChatGPT 연결 방법" />](https://youtu.be/KCFIzervxtE) |
+
 ---
 
 ## v4.7.0 — 조례 정비 레이더 (`ordinance_radar`)

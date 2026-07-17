@@ -21,6 +21,14 @@
 
 ![Korean Law MCP demo](./demo.gif)
 
+### Watch
+
+| Overview | Connect to Claude | Connect to ChatGPT |
+|:---:|:---:|:---:|
+| [<img src="https://img.youtube.com/vi/gmkuOqIV3dc/mqdefault.jpg" width="240" alt="korean-law-mcp overview" />](https://youtu.be/gmkuOqIV3dc) | [<img src="https://img.youtube.com/vi/KaUKLOH7290/mqdefault.jpg" width="240" alt="Connect to Claude" />](https://youtu.be/KaUKLOH7290) | [<img src="https://img.youtube.com/vi/KCFIzervxtE/mqdefault.jpg" width="240" alt="Connect to ChatGPT" />](https://youtu.be/KCFIzervxtE) |
+
+> Narration is in Korean.
+
 ---
 
 ## v4.7.0 — Ordinance revision radar (`ordinance_radar`)
