@@ -51,11 +51,38 @@ PlayMCP 심사 피드백 대응.
 - **`get_ordinance` id 별칭**: id 별칭으로 호출할 때 다음 단계 힌트가 `ordinSeq="undefined"`로 출력되던 버그 수정
 - **`maskSensitiveUrl` 대소문자 무시(`gi`)**: API 키 마스킹 회귀 방지 (`src/lib/fetch-with-retry.ts`)
 
+## [4.6.6] - 2026-07-06
+
+### Fixed
+
+- **"간헐적으로 도구를 못 찾음" 근본 해결**: 일반 rate limiter가 핸드셰이크(`initialize`/`tools/list`)까지 429로 막던 문제 → `tools/call`만 게이트. claude.ai의 **공유 egress IP**가 60rpm 버킷을 나눠 쓰다 핸드셰이크에서 429를 맞으면 도구 목록이 통째로 유실되던 것이 원인 (v4.6.2의 폴백게이트 원칙을 일반 limiter까지 확장) (`src/server/http-server.ts`)
+- **`get_ordinance` 데드엔드**: `id`↔`ordinSeq` 불일치로 조례 본문 조회가 막히던 문제 → `id` 별칭 수용
+- **`get_article_history` 상시 0건**: `lsJoHstInf`에 날짜를 전달하지 않아 모든 법령의 조문 개정이력이 항상 0건이던 문제 → 날짜 미지정 시 전체기간(19480101~20991231) 자동 적용
+- **발견성**: `search_law` 설명에 조례·행정규칙 진입점 명시 (`src/tool-registry.ts`)
+
 ## [4.6.5] - 2026-07-06
 
 ### Fixed
 
 - **ToolAnnotations `destructiveHint` 추가**: ListTools 광고 annotations에 `destructiveHint: false` 명시. 9개 도구 모두 법제처 read-only 조회라 파괴적 동작 없음을 명시적으로 선언 — 일부 MCP 호스트(카카오 등) 등록 심사가 `destructiveHint` 정의를 필수로 요구해 경고가 발생하던 문제 해소 (`src/tool-registry.ts`)
+
+## [4.6.4] - 2026-07-05
+
+### Fixed
+
+- **MCP 도구 annotations 한글 title 제거**: claude.ai 웹 클라이언트가 비-ASCII(한글) `annotations.title`이 붙은 `tools/list`를 인식하지 못해 **"도구 없음"으로 뜨던** 문제 대응. 서버·도구 호출 자체는 정상이었고(curl·GPT·Claude Code 세션 모두 작동) claude.ai 웹만 실패. v4.5.1에서 추가한 `TOOL_TITLES`를 제거하고 영문 `name`을 그대로 노출 (`src/tool-registry.ts`)
+
+## [4.6.3] - 2026-07-05
+
+### Added
+
+- **`search_law` 자치법규 자동 폴백**: '광진구 복무 조례' 같은 쿼리가 `NOT_FOUND` + 키워드 축소 힌트만 반환해 LLM이 `discover_tools` → `execute_tool` 2턴을 돌아가던 문제. 쿼리에 '조례'가 포함되거나 ○○시/군/구 토큰이 있으면 `search_ordinance`를 자동 시도한다(행정규칙 폴백과 동일 패턴) (`src/tools/search.ts`)
+
+## [4.6.2] - 2026-07-05
+
+### Fixed
+
+- **폴백 쿼터 게이트를 `tools/call`만 적용**: `FALLBACK_RATE_LIMIT_RPM` 소진 시 `initialize`/`tools/list`까지 429로 막혀 claude.ai 커넥터가 **도구 목록 자체를 못 싣던** 문제 수정. 법제처 쿼터를 실제 소모하는 `tools/call`만 게이트한다 (`src/server/http-server.ts`)
 
 ## [4.6.1] - 2026-07-05
 
@@ -78,6 +105,34 @@ PlayMCP 심사 피드백 대응.
 ### Tests
 
 - `law-antibot.test.ts`(3), `citation-content-matcher.test.ts`(8) 신설 — vitest 44 케이스 그린
+
+## [4.5.2] - 2026-07-04
+
+### Fixed
+
+- **광고 서비스명 정정**: ListTools 광고 접두를 PlayMCP 등록명과 일치하도록 「국가법령정보 MCP」 → `Korean-law-mcp`로 변경. 서비스명 검증은 등록폼 이름과 정확히 일치해야 통과 (`src/tool-registry.ts`)
+
+## [4.5.1] - 2026-07-04
+
+### Added
+
+- **PlayMCP 등록용 tool annotations**: 노출 도구의 ListTools 광고에 MCP annotations(read-only 조회·멱등·openWorld)를 추가하고 description에 서비스명을 접두. 원본 `allTools` 정의는 그대로 두고 `registerTools` 광고 시점에만 주입해 STDIO·HTTP 양쪽에 반영. PlayMCP 검증 2건(annotations 미정의·서비스명 누락) 해소 (`src/tool-registry.ts`)
+
+## [4.5.0] - 2026-07-03
+
+### Added
+
+- **`search_law` 시행예정 법령 감지**: 제명변경 개정이 공포~시행 사이에 있으면 신명칭 검색 시 '정확매칭 없음'만 떠서 **LLM이 "법령 없음"으로 오판하던** 문제 해결(「데이터기반행정 활성화에 관한 법률」 → 「인공지능 및 데이터 기반 행정 활성화에 관한 법률」 사례). `target=eflaw` 보조검색으로 시행예정만 추출해 MST별 시행일을 병합하고, **제명변경·개정예정·미시행 신규** 3분류 노트를 생성한다 (`src/lib/upcoming-laws.ts`)
+- 검색 결과에 시행예정 노트를 병기하고, 현행이 0건이면 시행예정을 단독 안내(효력 없음 경고 포함). `api-client.searchLaw`에 `target`(law|eflaw) 파라미터 추가. 시행예정본 조회 힌트에 `efYd`를 필수 병기 — `efYd` 없이는 법제처 API가 404를 반환
+
+## [4.4.4] - 2026-07-01
+
+### Fixed
+
+- **번호 없는 단일 별표 매칭 폴백**: `get_annexes`가 별표 선택값("별표1" 등)으로 매칭에 실패해도, 해당 법령의 별표가 정확히 1건뿐이면 그 별표를 반환한다. 「여권법 시행령」의 '수수료 및 사무의 대행에 드는 비용(제39조 관련)'처럼 **별표번호가 `000000`인 번호 없는 단일 별표**는 LLM이 임의로 "별표1"로 호출하면 `findMatchingAnnex` 매칭 0건 → `NOT_FOUND`로 새어 "참조 조문 부족" 답변을 유발했음. 별표가 유일 1건이면 선택값이 불일치해도 정답이 명확하므로 폴백 (`src/tools/annex.ts`)
+  - 회귀 안전: 별표가 여러 건인 법령(관세법 24건)에서 존재하지 않는 번호는 `NOT_FOUND` 유지
+
+> 이 변경(`fde094c`)의 커밋 메시지에는 `v4.4.3`으로 적혀 있으나, 원격에서 4.4.3(zod `^4` pin)이 먼저 npm에 게시되어 같은 버전으로는 publish가 거부됐습니다. 4.4.4로 올려 실제 배포했습니다.
 
 ## [4.4.3] - 2026-06-29
 
